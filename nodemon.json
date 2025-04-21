@@ -1,0 +1,5 @@
+{
+    "watch": ["commands", "index.js"], 
+    "ignore": ["userData.json"]
+  }
+  
