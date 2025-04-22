@@ -2,9 +2,6 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const express = require('express');  // Added express
-const app = express();  // Create an express app
-const port = process.env.PORT || 4000;
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const commandsPath = path.join(__dirname, 'commands');
@@ -41,20 +38,8 @@ console.log(`🚀 Pracky is live and connected to Telegram.`);
 console.log(`✨ Type /start in your bot to test the welcome message.`);
 
 // Launch the bot
-bot.launch().catch(error => {
-  console.error("Error launching bot:", error);
-});
+bot.launch();
 
 // Handle graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-// Set up a simple route to handle the platform's port scan
-app.get('/', (req, res) => {
-  res.send('Pracky bot is running');
-});
-
-// Start the express app and bind to the specified port
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
-});
