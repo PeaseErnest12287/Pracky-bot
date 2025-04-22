@@ -1,39 +1,71 @@
-const { Telegraf } = require('telegraf');
+require('dotenv').config();
+const chalk = require('chalk');
 const fs = require('fs');
-const path = require('path');
+const { Telegraf } = require('telegraf');
 
-// Initialize the bot with your token
-const bot = new Telegraf('7328467873:AAG98VDQ-kKKiFLol43TYCzuC7ILSyXc6rc');
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Path to commands folder
-const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+// 🌟 SYSTEM STARTUP LOGS
+console.log(chalk.cyan.bold('\n🧠 Pracky v1 SYSTEM BOOT INITIALIZED...'));
+console.log(chalk.yellow('🔍 Verifying environment variables...'));
 
-// Dynamically load all commands
-commandFiles.forEach(file => {
-  const command = require(path.join(commandsPath, file));
+if (!process.env.BOT_TOKEN) {
+  console.log(chalk.red('❌ BOT_TOKEN not found! Shutting down...'));
+  process.exit(1);
+} else {
+  console.log(chalk.green('✅ AuthKey located. Proceeding...'));
+}
 
-  const actualHandler = command.handler || command.execute;
+console.log(chalk.blue('🛠 Installing core modules...'));
+console.log(chalk.green('📦 Dependencies already installed. Skipping NPM install...'));
 
-  if (!command.name || typeof actualHandler !== 'function') {
-    console.error(`❌ Invalid command file: ${file}`);
-    return;
+console.log(chalk.magenta('💾 Creating internal storage...'));
+console.log(chalk.green('📂 Internal storage booted successfully.'));
+
+console.log(chalk.yellow('⚙️  Initializing Pracky Core Engine...'));
+
+// LOAD COMMANDS
+// LOAD COMMANDS
+const commandsPath = './commands';
+fs.readdirSync(commandsPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const { name, handler } = require(`${commandsPath}/${file}`);
+    if (name && typeof handler === 'function') {
+      bot.command(name, handler);
+      console.log(chalk.green(`✅ Loaded command: /${name}`));
+    } else {
+      console.warn(chalk.yellow(`⚠️ Skipped ${file}: Invalid command format.`));
+    }
   }
-
-  bot.command(command.name, actualHandler);
-  console.log(`✅ Loaded command: /${command.name}`);
 });
 
-// Bot startup message on restart
-bot.launch().then(() => {
-  const commandsCount = commandFiles.length;
-  const version = 'v1.0'; // Could pull from package.json too
-  const currentTime = new Date().toLocaleString();
 
-  console.log(`🚀 Pracky bot has started!`);
-  bot.telegram.sendMessage(
-    'your_chat_id', // replace with your actual chat id for testing
-    `✨ *Pracky Updated!*\n\nCommands: ${commandsCount}\nTime: ${currentTime}\nVersion: ${version}\n\nLet the games begin! 🔥`,
-    { parse_mode: 'Markdown' }
-  );
+// LOAD WELCOME MODULE
+require('./welcome/welcome')(bot);
+
+// ERROR HANDLER
+bot.catch(err => {
+  console.error('❌ Bot encountered an error:', err);
 });
+
+// START BOT
+bot.launch()
+  .then(() => {
+    console.log(chalk.greenBright.bold('\n🚀 Pracky is live and connected to Telegram.\n✨ Type /start in your bot to test the welcome message.\n'));
+
+    const ownerChatId = process.env.OWNER_ID; // 👈 Put your ID in .env
+    if (ownerChatId) {
+      bot.telegram.sendMessage(
+        ownerChatId,
+        `🧠 *Pracky v1 has rebooted successfully!*\n\nReady for action, boss. Type /help to flex my powers.`,
+        { parse_mode: 'Markdown' }
+      );
+    } else {
+      console.warn(chalk.yellow('⚠️ OWNER_ID not set in .env. Bot won’t auto-greet anyone.'));
+    }
+
+  })
+  .catch(error => {
+    console.error(chalk.red('💥 Launch error:'), error);
+  });
+//SR
