@@ -3,6 +3,10 @@ const chalk = require('chalk');
 const fs = require('fs');
 const { Telegraf } = require('telegraf');
 
+// Get prefix and port from .env or use defaults
+const prefix = process.env.PREFIX || '/';
+const port = process.env.PORT || 3000; // Default port is 3000 if not specified
+
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // 🌟 SYSTEM STARTUP LOGS
@@ -25,20 +29,19 @@ console.log(chalk.green('📂 Internal storage booted successfully.'));
 console.log(chalk.yellow('⚙️  Initializing Pracky Core Engine...'));
 
 // LOAD COMMANDS
-// LOAD COMMANDS
 const commandsPath = './commands';
 fs.readdirSync(commandsPath).forEach(file => {
   if (file.endsWith('.js')) {
     const { name, handler } = require(`${commandsPath}/${file}`);
     if (name && typeof handler === 'function') {
-      bot.command(name, handler);
-      console.log(chalk.green(`✅ Loaded command: /${name}`));
+      // Use the prefix dynamically when registering the command
+      bot.command(prefix + name, handler);
+      console.log(chalk.green(`✅ Loaded command: /${prefix}${name}`));
     } else {
       console.warn(chalk.yellow(`⚠️ Skipped ${file}: Invalid command format.`));
     }
   }
 });
-
 
 // LOAD WELCOME MODULE
 require('./welcome/welcome')(bot);
@@ -49,7 +52,12 @@ bot.catch(err => {
 });
 
 // START BOT
-bot.launch()
+bot.launch({
+  webhook: {
+    domain: process.env.RENDER_EXTERNAL_URL || `https://your-app-name.onrender.com`, // Use Render's URL
+    port: port
+  }
+})
   .then(() => {
     console.log(chalk.greenBright.bold('\n🚀 Pracky is live and connected to Telegram.\n✨ Type /start in your bot to test the welcome message.\n'));
 
@@ -68,4 +76,18 @@ bot.launch()
   .catch(error => {
     console.error(chalk.red('💥 Launch error:'), error);
   });
-//SR
+
+// SYSTEM SHUTDOWN LOGS
+process.on('SIGINT', () => {
+  console.log(chalk.yellow('\n🛑 Shutting down...'));
+  bot.stop('SIGINT');
+  console.log(chalk.green('✅ Bot stopped successfully.'));
+  process.exit();
+});
+
+process.on('SIGTERM', () => {
+  console.log(chalk.yellow('\n🛑 Shutting down...'));
+  bot.stop('SIGTERM');
+  console.log(chalk.green('✅ Bot stopped successfully.'));
+  process.exit();
+});
